@@ -4,6 +4,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"crypto/subtle"
 	"errors"
 	"io"
 
@@ -65,4 +66,11 @@ func Decrypt(key, ciphertext []byte) ([]byte, error) {
 		return nil, err
 	}
 	return plaintext, nil
+}
+
+func zeroKey(key []byte) {
+	for i := range key {
+		key[i] = 0
+	}
+	subtle.ConstantTimeCopy(1, key, make([]byte, len(key)))
 }
