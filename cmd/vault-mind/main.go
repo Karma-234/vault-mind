@@ -68,7 +68,9 @@ func main() {
 			}
 
 			return &mcp.CallToolResult{
-				Content: []mcp.Content{&mcp.TextContent{Text: generatedPassword}},
+				Content: []mcp.Content{
+					&mcp.TextContent{Text: generatedPassword},
+					&mcp.TextContent{Text: "Cryptographically random. Copy immediately."}},
 			}, nil
 		})
 	log.Println("%--- Start running server ---%")
