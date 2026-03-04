@@ -41,3 +41,70 @@ Perfect for developers handling production tokens, crypto users, or anyone who w
    go mod tidy
    go build -o vaultmind ./cmd/vaultmind
    ```
+   **OR**
+3. **Install directly**
+   ```bash
+   go install github.com/yourusername/vaultmind-mcp/cmd/vaultmind@latest
+   ./vaultmind
+   ```
+
+Enter your master passphrase when prompted (used to derive encryption key).
+Server starts on stdio (for local MCP clients).
+
+Connect to Your AI ClientClaude Desktop / Cursor / Continue.dev:Add as stdio server (command: full path to ./vaultmind).
+Example config in claude_desktop_config.json or client settings:json
+
+{
+"mcpServers": {
+"vaultmind": {
+"command": "/path/to/vaultmind",
+"args": [],
+"type": "stdio"
+}
+}
+}
+
+Prompt examples:"Use VaultMind to generate a 32-char passphrase."
+"VaultMind, add my OpenAI API key: sk-..."
+"VaultMind, list my API keys added this month."
+
+Security Warnings & Best PracticesLocal-only by design — no remote hosting recommended for sensitive secrets (transit/memory risks).
+Not production-audited — treat as experimental for critical items (e.g., main crypto seeds). Use offline backups (metal/paper) for seeds.
+Master passphrase — choose a strong one (20+ chars); weak passphrase = whole DB at risk if file stolen.
+Run with caution — MCP servers inherit your process privileges.
+Backup — Export encrypted DB manually; restore requires same passphrase.
+
+Example Usage in Claude/Cursortext
+
+> Use VaultMind to add a credential:
+> service: Stripe
+> type: api*key
+> secret: sk_test*...
+> notes: Test mode key
+
+VaultMind: Credential added securely (ID: abc123...). Warning: Rotate periodically.
+
+text
+
+> VaultMind, get my Stripe API key
+
+VaultMind: Enter master passphrase in server console...
+Retrieved: sk*test*... (copy now — will be wiped from memory)
+
+Development & ContributingBuilt with:modelcontextprotocol/go-sdk — official MCP Go SDK
+BadgerDB — embedded KV store
+golang.org/x/crypto/argon2 — key derivation
+golang.org/x/term — secure input
+
+Folder structure follows standard Go layout:
+
+cmd/vaultmind/ # main entry point
+internal/
+crypto/ # encryption utils
+storage/ # DB & credential ops
+
+To contribute:Fork & PR
+Add tests (go test ./...)
+Follow Go best practices (effective Go, clean architecture)
+
+Ideas welcome: TOTP support, audit viewer, weak password scanner, etc.LicenseMIT License — see LICENSEMade with for privacy-conscious AI users.Star the repo if this solves a pain point for you! Feedback/PRs appreciated.
