@@ -11,19 +11,25 @@ import (
 
 	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/joho/godotenv"
+	"github.com/karma-234/vault-mind-mcp/internal/crypto"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"golang.org/x/term"
 )
 
 func main() {
-	// if running under MCP stdio transport, stdin may not be a TTY; only
-	// prompt when a terminal is available.
-	pass, err := promptMasterPassphrase()
-	if err != nil {
-		log.Printf("warning: could not read master passphrase: %v", err)
+
+	masterPass := os.Getenv("VAULTMIND_PASSPHRASE")
+	if masterPass == "" {
+		log.Fatal("VAULTMIND_PASSPHRASE environment variable is required. " +
+			"Set it before starting the server, e.g.:\n" +
+			"  export VAULTMIND_PASSPHRASE='your-strong-passphrase-here'\n" +
+			"Then restart your MCP client.")
 	}
-	// do something with pass if needed
-	_ = pass
+	key, err := crypto.DeriveKeyFromPassphrase(masterPass)
+	if err != nil {
+		log.Fatalf("failed to derive key from passphrase: %v", err)
+	}
+	defer crypto.ZeroKey(key)
 
 	if err := godotenv.Load(); err != nil {
 		log.Printf("Warning: could not load .env file: %v", err)

@@ -4,7 +4,6 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
-	"crypto/subtle"
 	"errors"
 	"io"
 
@@ -48,6 +47,7 @@ func Decrypt(key, ciphertext []byte) ([]byte, error) {
 	}
 	salt, ciphertext := ciphertext[:16], ciphertext[16:]
 	subkey := argon2.IDKey(key, salt, 3, 64*1024, 4, 32)
+	defer ZeroKey(subkey)
 	block, err := aes.NewCipher(subkey)
 	if err != nil {
 		return nil, err
@@ -68,9 +68,9 @@ func Decrypt(key, ciphertext []byte) ([]byte, error) {
 	return plaintext, nil
 }
 
-func zeroKey(key []byte) {
+func ZeroKey(key []byte) {
 	for i := range key {
 		key[i] = 0
 	}
-	subtle.ConstantTimeCopy(1, key, make([]byte, len(key)))
+
 }
