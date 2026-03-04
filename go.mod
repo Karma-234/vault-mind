@@ -6,6 +6,7 @@ require (
 	github.com/google/jsonschema-go v0.4.2
 	github.com/joho/godotenv v1.5.1
 	github.com/modelcontextprotocol/go-sdk v1.4.0
+	golang.org/x/crypto v0.48.0
 	golang.org/x/term v0.40.0
 )
 
