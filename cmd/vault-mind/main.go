@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/json"
-	"fmt"
 	"log"
 	"math/big"
 	"os"
@@ -12,8 +11,8 @@ import (
 	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/joho/godotenv"
 	"github.com/karma-234/vault-mind-mcp/internal/crypto"
+	"github.com/karma-234/vault-mind-mcp/internal/storage"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-	"golang.org/x/term"
 )
 
 func main() {
@@ -33,6 +32,10 @@ func main() {
 
 	if err := godotenv.Load(); err != nil {
 		log.Printf("Warning: could not load .env file: %v", err)
+	}
+	store, err := storage.NewVaultPebbleStorage("./vaultmind.db", key)
+	if err != nil {
+		log.Fatalf("failed to initialize storage: %v", err)
 	}
 
 	server := mcp.NewServer(&mcp.Implementation{
@@ -79,6 +82,33 @@ func main() {
 					&mcp.TextContent{Text: "Cryptographically random. Copy immediately."}},
 			}, nil
 		})
+	type AddCredentialParams struct {
+		Service string `json:"service" jsonschema:"Service name (e.g., 'GitHub')"`
+		Type    string `json:"type" jsonschema:"Credential type (e.g., 'API Key', 'Seed Phrase')"`
+		Secret  string `json:"secret" jsonschema:"The sensitive credential value. It will be encrypted before storage."`
+		Notes   string `json:"notes,omitempty" jsonschema:"Additional notes (optional)"`
+	}
+	addCredSchema, err := jsonschema.For[AddCredentialParams](nil)
+	server.AddTool(&mcp.Tool{
+		Name:        "add-credential",
+		Description: "Securely add a credential (e.g., API key, seed phrase). It's encrypted before storage.",
+		InputSchema: addCredSchema,
+	}, func(ctx context.Context, ctr *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+
+		var params AddCredentialParams
+		if err := json.Unmarshal(ctr.Params.Arguments, &params); err != nil {
+			return nil, err
+		}
+		_, err := store.AddCredential(params.Service, params.Type, string(params.Secret), params.Notes)
+		if err != nil {
+			return nil, err
+		}
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				&mcp.TextContent{Text: "Credential added successfully."},
+			},
+		}, nil
+	})
 	log.Println("%--- Start running server ---%")
 	if err := server.Run(context.Background(), &mcp.StdioTransport{}); err != nil {
 		log.Fatalf("Server failed: %v", err)
@@ -110,17 +140,4 @@ func generateSecurePassword(length int, includeSymbols bool) (string, error) {
 		b[i] = charCycle[num.Int64()]
 	}
 	return string(b), nil
-}
-func promptMasterPassphrase() (string, error) {
-	fd := int(os.Stdin.Fd())
-	if !term.IsTerminal(fd) {
-		return "", nil
-	}
-
-	bytePass, err := term.ReadPassword(fd)
-	if err != nil {
-		return "", err
-	}
-	fmt.Println()
-	return string(bytePass), nil
 }

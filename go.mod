@@ -3,11 +3,11 @@ module github.com/karma-234/vault-mind-mcp
 go 1.25.0
 
 require (
+	github.com/cockroachdb/pebble v1.1.5
 	github.com/google/jsonschema-go v0.4.2
 	github.com/joho/godotenv v1.5.1
 	github.com/modelcontextprotocol/go-sdk v1.4.0
 	golang.org/x/crypto v0.48.0
-	golang.org/x/term v0.40.0
 )
 
 require (
@@ -17,7 +17,6 @@ require (
 	github.com/cockroachdb/errors v1.11.3 // indirect
 	github.com/cockroachdb/fifo v0.0.0-20240606204812-0bbfbd93a7ce // indirect
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
-	github.com/cockroachdb/pebble v1.1.5 // indirect
 	github.com/cockroachdb/redact v1.1.5 // indirect
 	github.com/cockroachdb/tokenbucket v0.0.0-20230807174530-cc333fc44b06 // indirect
 	github.com/getsentry/sentry-go v0.27.0 // indirect
