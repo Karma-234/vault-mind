@@ -27,6 +27,7 @@ type Storage interface {
 	AddBulkCredentials(creds []Credential) error
 	ListCredentials() ([]Credential, error)
 	GetCredential(id string) (*Credential, string, error)
+	Close() error
 }
 
 type VaultPebbleStorage struct {
