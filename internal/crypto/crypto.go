@@ -46,11 +46,24 @@ func Decrypt(key, ciphertext []byte) ([]byte, error) {
 	if len(ciphertext) < 16 {
 		return nil, errors.New("Invalid Ciphertext")
 	}
+	// Extract salt from the beginning of the ciphertext
 	salt, ciphertext := ciphertext[:16], ciphertext[16:]
 
+	// If key contains salt+derivedKey (48 bytes: 16 salt + 32 key), extract just the key part
+	// Otherwise, treat key as original passphrase and re-derive
+	var subkey []byte
+	if len(key) == 48 {
+		// Key is in format: salt + derived_key, extract the derived key
+		subkey = key[16:]
+		log.Printf("[DEBUG] Decrypt: using pre-derived key")
+	} else {
+		// Key is original passphrase, re-derive it
+		subkey = argon2.IDKey(key, salt, 3, 64*1024, 4, 32)
+		defer ZeroKey(subkey)
+		log.Printf("[DEBUG] Decrypt: re-deriving key from passphrase")
+	}
+
 	log.Printf("[DEBUG] Decrypt: salt len=%d, first 4 bytes: %x", len(salt), salt[:4])
-	subkey := argon2.IDKey(key, salt, 3, 64*1024, 4, 32)
-	defer ZeroKey(subkey)
 	block, err := aes.NewCipher(subkey)
 	if err != nil {
 		return nil, err

@@ -120,7 +120,17 @@ func (s *VaultPebbleStorage) AddBulkCredentials(creds []AddCredentialInput) erro
 	defer batch.Close()
 
 	for _, cred := range creds {
-		var holdCred Credential
+		id, err := generateID()
+		if err != nil {
+			return err
+		}
+		holdCred := Credential{
+			ID:      id,
+			Service: cred.Service,
+			Type:    cred.Type,
+			Notes:   cred.Notes,
+			Created: time.Now(),
+		}
 		data, err := json.Marshal(holdCred)
 		if err != nil {
 			return err
