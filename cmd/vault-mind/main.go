@@ -35,7 +35,7 @@ func main() {
 	}
 	store, err := storage.NewVaultPebbleStorage("./vaultmind.db", key)
 	if err != nil {
-		log.Fatalf("failed to initialize storage: %v", err)
+		log.Fatalf("Failed to initialize storage: %v", err)
 	}
 
 	server := mcp.NewServer(&mcp.Implementation{
@@ -98,6 +98,14 @@ func main() {
 		var params AddCredentialParams
 		if err := json.Unmarshal(ctr.Params.Arguments, &params); err != nil {
 			return nil, err
+		}
+		if store == nil {
+			return &mcp.CallToolResult{
+				Content: []mcp.Content{
+					&mcp.TextContent{Text: "Error: Storage not initialized. Set VAULTMIND_DB_PATH to a writable directory."},
+				},
+				IsError: true,
+			}, nil
 		}
 		_, err := store.AddCredential(params.Service, params.Type, string(params.Secret), params.Notes)
 		if err != nil {

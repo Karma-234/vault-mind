@@ -35,11 +35,16 @@ type VaultPebbleStorage struct {
 }
 
 func NewVaultPebbleStorage(dbPath string, key []byte) (*VaultPebbleStorage, error) {
-
-	if err := os.MkdirAll(filepath.Dir(dbPath), 0755); err != nil {
+	home, err := os.UserHomeDir()
+	if err != nil {
 		return nil, err
 	}
-	db, err := pebble.Open(dbPath, &pebble.Options{})
+	path := filepath.Join(home, dbPath)
+	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+		return nil, err
+	}
+
+	db, err := pebble.Open(path, &pebble.Options{})
 	if err != nil {
 		return nil, err
 	}
