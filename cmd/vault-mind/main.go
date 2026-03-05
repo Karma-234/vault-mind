@@ -4,9 +4,11 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/json"
+	"fmt"
 	"log"
 	"math/big"
 	"os"
+	"time"
 
 	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/joho/godotenv"
@@ -99,14 +101,6 @@ func main() {
 		if err := json.Unmarshal(ctr.Params.Arguments, &params); err != nil {
 			return nil, err
 		}
-		if store == nil {
-			return &mcp.CallToolResult{
-				Content: []mcp.Content{
-					&mcp.TextContent{Text: "Error: Storage not initialized. Set VAULTMIND_DB_PATH to a writable directory."},
-				},
-				IsError: true,
-			}, nil
-		}
 		_, err := store.AddCredential(params.Service, params.Type, string(params.Secret), params.Notes)
 		if err != nil {
 			return nil, err
@@ -115,6 +109,30 @@ func main() {
 			Content: []mcp.Content{
 				&mcp.TextContent{Text: "Credential added successfully."},
 			},
+		}, nil
+	})
+	server.AddTool(&mcp.Tool{
+		Name:        "list-credentials",
+		Description: "List all stored credentials with their service, type, and notes. Does not reveal secrets.",
+		InputSchema: map[string]any{
+			"type":       "object",
+			"properties": map[string]any{},
+		},
+	}, func(ctx context.Context, ctr *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+
+		creds, err := store.ListCredentials()
+		if err != nil {
+			return nil, err
+		}
+		var content []mcp.Content
+		for _, cred := range creds {
+			content = append(content, &mcp.TextContent{
+				Text: fmt.Sprintf(" Service: %s | Type: %s | Notes: %s | Created: %s",
+					cred.Service, cred.Type, cred.Notes, cred.Created.Format(time.RFC3339)),
+			})
+		}
+		return &mcp.CallToolResult{
+			Content: content,
 		}, nil
 	})
 	log.Println("%--- Start running server ---%")

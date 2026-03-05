@@ -101,3 +101,23 @@ func (s *VaultPebbleStorage) AddCredential(service, credType, secret, notes stri
 	}
 	return id, nil
 }
+func (s *VaultPebbleStorage) ListCredentials() ([]Credential, error) {
+	iter, err := s.db.NewIter(&pebble.IterOptions{
+		LowerBound: []byte("Meta:"),
+		UpperBound: []byte("Meta;"),
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer iter.Close()
+
+	var credentials []Credential
+	for iter.First(); iter.Valid(); iter.Next() {
+		var cred Credential
+		if err := json.Unmarshal(iter.Value(), &cred); err != nil {
+			return nil, err
+		}
+		credentials = append(credentials, cred)
+	}
+	return credentials, nil
+}
