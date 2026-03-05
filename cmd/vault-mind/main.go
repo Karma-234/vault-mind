@@ -111,6 +111,33 @@ func main() {
 			},
 		}, nil
 	})
+
+	type BulkCredentialParams struct {
+		Entries []storage.AddCredentialInput `json:"entries" jsonschema:"A list of credentials to store"`
+	}
+	bulkSchema, err := jsonschema.For[BulkCredentialParams](nil)
+	if err != nil {
+		log.Fatalf("failed to derive input schema for add-bulk-credentials: %v", err)
+	}
+	server.AddTool(&mcp.Tool{
+		Name:        "add-bulk-credentials",
+		Description: "Add multiple credentials in a single call. Each entry is encrypted individually. Optimized for batch operations.",
+		InputSchema: bulkSchema,
+	}, func(ctx context.Context, ctr *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		var params BulkCredentialParams
+		if err := json.Unmarshal(ctr.Params.Arguments, &params); err != nil {
+			return nil, err
+		}
+		if err := store.AddBulkCredentials(params.Entries); err != nil {
+			return nil, err
+		}
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				&mcp.TextContent{Text: fmt.Sprintf("%d credentials added in bulk.", len(params.Entries))},
+			},
+		}, nil
+	})
+
 	server.AddTool(&mcp.Tool{
 		Name:        "list-credentials",
 		Description: "List all stored credentials with their service, type, and notes. Does not reveal secrets.",

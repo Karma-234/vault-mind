@@ -24,6 +24,7 @@ type Credential struct {
 }
 type Storage interface {
 	AddCredential(service, credType, secret, notes string) (string, error)
+	AddBulkCredentials(creds []Credential) error
 	ListCredentials() ([]Credential, error)
 	GetCredential(id string) (*Credential, string, error)
 }
@@ -103,21 +104,34 @@ func (s *VaultPebbleStorage) AddCredential(service, credType, secret, notes stri
 	return id, nil
 }
 
-func (s *VaultPebbleStorage) AddBulkCredentials(creds []Credential) error {
+type AddCredentialInput struct {
+	Service string `json:"service" jsonschema:"The name of the service or application (e.g., 'GitHub', 'AWS')."`
+	Type    string `json:"type" jsonschema:"The type of credential (e.g., 'password', 'API key')."`
+	Secret  string `json:"secret" jsonschema:"The secret value to store (e.g., the password or API key)."`
+	Notes   string `json:"notes,omitempty" jsonschema:"Optional notes about the credential."`
+}
+
+func (s *VaultPebbleStorage) AddBulkCredentials(creds []AddCredentialInput) error {
 	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	batch := s.db.NewBatch()
 	defer batch.Close()
-	defer s.mu.Unlock()
+
 	for _, cred := range creds {
-		cred.Created = time.Now()
-		data, err := json.Marshal(cred)
+		var holdCred Credential
+		data, err := json.Marshal(holdCred)
 		if err != nil {
 			return err
 		}
-		if err := batch.Set([]byte("Meta:"+cred.ID), data, pebble.Sync); err != nil {
+		if err := batch.Set([]byte("Meta:"+holdCred.ID), data, pebble.NoSync); err != nil {
 			return err
 		}
-		if err := batch.Set([]byte("Secret:"+cred.ID), []byte(cred.Notes), pebble.Sync); err != nil {
+		encSecret, err := crypto.Encrypt(s.key, []byte(cred.Secret))
+		if err != nil {
+			return err
+		}
+		if err := batch.Set([]byte("Secret:"+holdCred.ID), encSecret, pebble.NoSync); err != nil {
 			return err
 		}
 	}
