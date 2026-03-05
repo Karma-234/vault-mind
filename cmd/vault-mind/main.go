@@ -87,6 +87,58 @@ func main() {
 					&mcp.TextContent{Text: "Cryptographically random. Copy immediately."}},
 			}, nil
 		})
+
+	type GenerateMultiplePasswordsParams struct {
+		Count          int  `json:"count" jsonschema:"Number of passwords to generate (1-100)"`
+		Length         int  `json:"length,omitempty" jsonschema:"Password length (default: 20)"`
+		IncludeSymbols bool `json:"include-symbols,omitempty" jsonschema:"Include special characters (default: true)"`
+	}
+
+	multiPassSchema, err := jsonschema.For[GenerateMultiplePasswordsParams](nil)
+	if err != nil {
+		log.Fatalf("failed to derive input schema for generate-multiple-passwords: %v", err)
+	}
+
+	server.AddTool(&mcp.Tool{
+		Name:        "generate-multiple-passwords",
+		Description: "Generate multiple cryptographically secure random passwords at once. Useful for batch credential setup.",
+		InputSchema: multiPassSchema,
+	},
+		func(ctx context.Context, ctr *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+
+			var params GenerateMultiplePasswordsParams
+			if err := json.Unmarshal(ctr.Params.Arguments, &params); err != nil {
+				return nil, err
+			}
+
+			if params.Count <= 0 || params.Count > 100 {
+				params.Count = 10
+			}
+			if params.Length == 0 {
+				params.Length = 20
+			}
+			if !params.IncludeSymbols {
+				params.IncludeSymbols = true
+			}
+
+			var passwords []string
+			for i := 0; i < params.Count; i++ {
+				pwd, err := generateSecurePassword(params.Length, params.IncludeSymbols)
+				if err != nil {
+					return nil, err
+				}
+				passwords = append(passwords, pwd)
+			}
+
+			passwordList, _ := json.MarshalIndent(passwords, "", "  ")
+			return &mcp.CallToolResult{
+				Content: []mcp.Content{
+					&mcp.TextContent{Text: string(passwordList)},
+					&mcp.TextContent{Text: fmt.Sprintf("Generated %d passwords. All cryptographically random.", params.Count)},
+				},
+			}, nil
+		})
+
 	type AddCredentialParams struct {
 		Service string `json:"service" jsonschema:"Service name (e.g., 'GitHub')"`
 		Type    string `json:"type" jsonschema:"Credential type (e.g., 'API Key', 'Seed Phrase')"`
