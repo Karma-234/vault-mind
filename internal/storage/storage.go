@@ -3,6 +3,7 @@ package storage
 import (
 	"crypto/rand"
 	"encoding/json"
+	"log"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -101,6 +102,28 @@ func (s *VaultPebbleStorage) AddCredential(service, credType, secret, notes stri
 	}
 	return id, nil
 }
+
+func (s *VaultPebbleStorage) AddBulkCredentials(creds []Credential) error {
+	s.mu.Lock()
+	batch := s.db.NewBatch()
+	defer batch.Close()
+	defer s.mu.Unlock()
+	for _, cred := range creds {
+		cred.Created = time.Now()
+		data, err := json.Marshal(cred)
+		if err != nil {
+			return err
+		}
+		if err := batch.Set([]byte("Meta:"+cred.ID), data, pebble.Sync); err != nil {
+			return err
+		}
+		if err := batch.Set([]byte("Secret:"+cred.ID), []byte(cred.Notes), pebble.Sync); err != nil {
+			return err
+		}
+	}
+	return batch.Commit(pebble.Sync)
+}
+
 func (s *VaultPebbleStorage) ListCredentials() ([]Credential, error) {
 	iter, err := s.db.NewIter(&pebble.IterOptions{
 		LowerBound: []byte("Meta:"),
@@ -120,4 +143,35 @@ func (s *VaultPebbleStorage) ListCredentials() ([]Credential, error) {
 		credentials = append(credentials, cred)
 	}
 	return credentials, nil
+}
+
+func (s *VaultPebbleStorage) GetCredential(id string) (*Credential, string, error) {
+	metaKey := []byte("Meta:" + id)
+	secretKey := []byte("Secret:" + id)
+
+	metaData, closer, err := s.db.Get(metaKey)
+
+	if err != nil {
+		return nil, "", err
+	}
+	defer closer.Close()
+	var cred Credential
+	if err := json.Unmarshal(metaData, &cred); err != nil {
+		return nil, "", err
+	}
+	encSecret, closer, err := s.db.Get(secretKey)
+	log.Printf("[DEBUG] Encrpted Secret len=%d", len(encSecret))
+	if err != nil {
+		return nil, "", err
+	}
+	defer closer.Close()
+	secretBytes, err := crypto.Decrypt(s.key, encSecret)
+	if err != nil {
+		return nil, "", err
+	}
+	return &cred, string(secretBytes), nil
+}
+
+func (s *VaultPebbleStorage) Close() error {
+	return s.db.Close()
 }

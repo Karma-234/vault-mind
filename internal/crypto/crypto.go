@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"io"
+	"log"
 
 	"golang.org/x/crypto/argon2"
 )
@@ -24,7 +25,7 @@ func Encrypt(key []byte, data []byte) ([]byte, error) {
 	if len(key) < 16+32 {
 		return nil, errors.New("Invalid Key")
 	}
-	key, salt := key[16:], key[:16]
+	salt, key := key[:16], key[16:]
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -46,6 +47,8 @@ func Decrypt(key, ciphertext []byte) ([]byte, error) {
 		return nil, errors.New("Invalid Ciphertext")
 	}
 	salt, ciphertext := ciphertext[:16], ciphertext[16:]
+
+	log.Printf("[DEBUG] Decrypt: salt len=%d, first 4 bytes: %x", len(salt), salt[:4])
 	subkey := argon2.IDKey(key, salt, 3, 64*1024, 4, 32)
 	defer ZeroKey(subkey)
 	block, err := aes.NewCipher(subkey)
@@ -61,8 +64,11 @@ func Decrypt(key, ciphertext []byte) ([]byte, error) {
 		return nil, errors.New("Invalid Ciphertext")
 	}
 	nonce, cipciphertext := ciphertext[:nonceSize], ciphertext[nonceSize:]
+
+	log.Printf("[DEBUG] Decrypt: nonce len=%d, ciphertext len=%d", len(nonce), len(ciphertext))
 	plaintext, err := gcm.Open(nil, nonce, cipciphertext, nil)
 	if err != nil {
+		log.Printf("[ERROR] GCM Open failed: %v", err)
 		return nil, err
 	}
 	return plaintext, nil

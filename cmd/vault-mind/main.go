@@ -127,12 +127,41 @@ func main() {
 		var content []mcp.Content
 		for _, cred := range creds {
 			content = append(content, &mcp.TextContent{
-				Text: fmt.Sprintf(" Service: %s | Type: %s | Notes: %s | Created: %s",
-					cred.Service, cred.Type, cred.Notes, cred.Created.Format(time.RFC3339)),
+				Text: fmt.Sprintf("ID: %s | Service: %s | Type: %s | Notes: %s | Created: %s",
+					cred.ID, cred.Service, cred.Type, cred.Notes, cred.Created.Format(time.RFC3339)),
 			})
 		}
 		return &mcp.CallToolResult{
 			Content: content,
+		}, nil
+	})
+	type GetCredentialSchema struct {
+		ID string `json:"id" jsonschema:"The unique ID of the credential to retrieve."`
+	}
+	getCredSchema, err := jsonschema.For[GetCredentialSchema](nil)
+	if err != nil {
+		log.Fatalf("failed to derive input schema for get-credential: %v", err)
+	}
+	server.AddTool(&mcp.Tool{
+		Name:        "get-credential",
+		Description: "Retrieve the secret for a specific credential by ID. Use with caution to avoid exposing secrets.",
+		InputSchema: getCredSchema,
+	}, func(ctx context.Context, ctr *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		var params GetCredentialSchema
+		if err := json.Unmarshal(ctr.Params.Arguments, &params); err != nil {
+			return nil, err
+		}
+		cred, plaintext, err := store.GetCredential(params.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				&mcp.TextContent{Text: fmt.Sprintf("Service: %s | Type: %s | Notes: %s | Created: %s",
+					cred.Service, cred.Type, cred.Notes, cred.Created.Format(time.RFC3339))},
+				&mcp.TextContent{Text: fmt.Sprintf("Secret: %s", plaintext)},
+			},
 		}, nil
 	})
 	log.Println("%--- Start running server ---%")
