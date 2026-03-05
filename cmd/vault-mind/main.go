@@ -2,11 +2,9 @@ package main
 
 import (
 	"context"
-	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"log"
-	"math/big"
 	"net/http"
 	"os"
 	"os/signal"
@@ -15,6 +13,7 @@ import (
 
 	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/joho/godotenv"
+	password "github.com/karma-234/vault-mind-mcp/internal"
 	"github.com/karma-234/vault-mind-mcp/internal/crypto"
 	"github.com/karma-234/vault-mind-mcp/internal/storage"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -76,7 +75,7 @@ func main() {
 			if !params.IncludeSymbols {
 				params.IncludeSymbols = true
 			}
-			generatedPassword, err := generateSecurePassword(params.Length, params.IncludeSymbols)
+			generatedPassword, err := password.GenerateSecurePassword(params.Length, params.IncludeSymbols)
 			if err != nil {
 				return nil, err
 			}
@@ -123,7 +122,7 @@ func main() {
 
 			var passwords []string
 			for i := 0; i < params.Count; i++ {
-				pwd, err := generateSecurePassword(params.Length, params.IncludeSymbols)
+				pwd, err := password.GenerateSecurePassword(params.Length, params.IncludeSymbols)
 				if err != nil {
 					return nil, err
 				}
@@ -286,31 +285,4 @@ func main() {
 
 	log.Println("Server exited")
 
-}
-
-func generateSecurePassword(length int, includeSymbols bool) (string, error) {
-	letters := os.Getenv("LETTERS")
-	if letters == "" {
-		letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	}
-
-	symbols := os.Getenv("SYMBOLS")
-	if symbols == "" {
-		symbols = "!@#$%^&*()-_=+[]{}|;:,.<>?/~`"
-	}
-
-	charCycle := letters
-	if includeSymbols {
-		charCycle += symbols
-	}
-
-	b := make([]byte, length)
-	for i := range b {
-		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(charCycle))))
-		if err != nil {
-			return "", err
-		}
-		b[i] = charCycle[num.Int64()]
-	}
-	return string(b), nil
 }
