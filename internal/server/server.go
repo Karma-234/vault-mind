@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/karma-234/vault-mind-mcp/internal/mtools"
 	"github.com/karma-234/vault-mind-mcp/internal/storage"
@@ -37,8 +38,11 @@ func NewHttpServer(handler http.Handler) *http.Server {
 	caPool := x509.NewCertPool()
 	caPool.AppendCertsFromPEM(cert)
 	return &http.Server{
-		Addr:    ":8080",
-		Handler: handler,
+		Addr:         "127.0.0.1:8080",
+		Handler:      handler,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		IdleTimeout:  120 * time.Second,
 		TLSConfig: &tls.Config{
 			ClientAuth: tls.RequireAndVerifyClientCert,
 			MinVersion: tls.VersionTLS13,

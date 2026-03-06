@@ -45,20 +45,14 @@ func main() {
 	log.Println("%--- Start running server ---%")
 	handler := server.NewHTTPHandler(newServer)
 
-	httpServer := &http.Server{
-		Addr:         "127.0.0.1:8080",
-		Handler:      handler,
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 30 * time.Second,
-		IdleTimeout:  120 * time.Second,
-	}
+	httpServer := server.NewHttpServer(handler)
 
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
 		log.Printf("Server listening on http://127.0.0.1:8080")
-		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := httpServer.ListenAndServeTLS("server.cert", "server.key"); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("HTTP server failed: %v", err)
 		}
 	}()
