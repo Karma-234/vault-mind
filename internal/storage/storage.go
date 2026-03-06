@@ -24,7 +24,7 @@ type Credential struct {
 }
 type Storage interface {
 	AddCredential(service, credType, secret, notes string) (string, error)
-	AddBulkCredentials(creds []Credential) error
+	AddBulkCredentials(creds []AddCredentialInput) error
 	ListCredentials() ([]Credential, error)
 	GetCredential(id string) (*Credential, string, error)
 	Close() error

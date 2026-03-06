@@ -8,10 +8,10 @@ import (
 )
 
 type ServerConfig struct {
-	db storage.Storage
+	Pebble storage.Storage
 }
 
-func NewServer(config ServerConfig) *mcp.Server {
+func NewServer(config *ServerConfig) *mcp.Server {
 	server := mcp.NewServer(&mcp.Implementation{
 		Name:    "vault-mind",
 		Version: "0.1.0",
