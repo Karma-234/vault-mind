@@ -3,6 +3,7 @@ package server
 import (
 	"net/http"
 
+	"github.com/karma-234/vault-mind-mcp/internal/mtools"
 	"github.com/karma-234/vault-mind-mcp/internal/storage"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -16,6 +17,9 @@ func NewServer(config *ServerConfig) *mcp.Server {
 		Name:    "vault-mind",
 		Version: "0.1.0",
 	}, nil)
+	mtools.RegisterPasswordTools(server)
+	mtools.RegisterAddCredentialTools(server, config.Pebble)
+	mtools.RegisterCredentialRetrievalTools(server, config.Pebble)
 	return server
 }
 

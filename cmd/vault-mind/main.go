@@ -11,8 +11,8 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/karma-234/vault-mind-mcp/internal/crypto"
+	"github.com/karma-234/vault-mind-mcp/internal/server"
 	"github.com/karma-234/vault-mind-mcp/internal/storage"
-	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 func main() {
@@ -38,13 +38,12 @@ func main() {
 		log.Fatalf("Failed to initialize storage: %v", err)
 	}
 
-	server := mcp.NewServer(&mcp.Implementation{
-		Name:    "vault-mind",
-		Version: "0.1.0",
-	}, nil)
+	newServer := server.NewServer(&server.ServerConfig{
+		Pebble: store,
+	})
 
 	log.Println("%--- Start running server ---%")
-	handler := mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server { return server }, nil)
+	handler := server.NewHTTPHandler(newServer)
 
 	httpServer := &http.Server{
 		Addr:         "127.0.0.1:8080",
