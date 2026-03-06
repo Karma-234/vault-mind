@@ -46,10 +46,6 @@ go build -o vaultmind ./cmd/vaultmind
 
 ## Running the Server
 
-## Demo
-
-![VaultMind Multi-Agent Workflow](assets/gif/vaultmin-mcp.gif)
-
 ### 1. Set your strong master passphrase
 
 This passphrase is used to derive the encryption key. It must be set every time you start the server.
@@ -64,6 +60,10 @@ Never commit it to git or share it.
 ---
 
 ### Start the server (HTTP transport – recommended)
+
+## Demo
+
+![VaultMind Multi-Agent Workflow](assets/gif/vaultmin-mcp.gif)
 
 ```bash
 ./vaultmind
