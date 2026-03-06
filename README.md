@@ -62,8 +62,9 @@ Never commit it to git or share it.
 ### Start the server (HTTP transport – recommended)
 
 ## Demo
-
-![VaultMind Multi-Agent Workflow](assets/gif/vaultmin-mcp.gif)
+<p align="center">
+  <img src="assets/gif/vaultmin-mcp.gif" width="800"/>
+</p>
 
 ```bash
 ./vaultmind
