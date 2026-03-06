@@ -38,7 +38,7 @@ Perfect for developers, crypto users, and privacy-conscious individuals who want
 
 ### Installation
 
-```bash
+````bash
 git clone https://github.com/yourusername/vaultmind.git
 cd vaultmind
 go mod tidy
@@ -52,7 +52,7 @@ This passphrase is used to derive the encryption key. It must be set every time 
 
 ```bash
 export VAULTMIND_PASSPHRASE="your-very-strong-passphrase-here"
-```
+````
 
 Use a **unique, long passphrase** (20+ characters recommended).  
 Never commit it to git or share it.
@@ -248,9 +248,9 @@ cmd/
   vaultmind/         # entry point & main logic
 
 internal/
-  config/            # environment variable & config loading
+  server/            # environment variable & config loading
   crypto/            # encryption, decryption, key derivation
-  server/            # MCP server setup & tool handlers
+  mtools/            # Tool handlers
   storage/           # Pebble database operations & Credential model
 ```
 
