@@ -46,6 +46,12 @@ go build -o vaultmind ./cmd/vaultmind
 
 ## Running the Server
 
+## Demo
+
+<p align="center">
+  <img src="assets/gif/vaultmin-mcp.gif" width="800"/>
+</p>
+
 ### 1. Set your strong master passphrase
 
 This passphrase is used to derive the encryption key. It must be set every time you start the server.
