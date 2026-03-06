@@ -27,6 +27,9 @@ type Storage interface {
 	AddBulkCredentials(creds []AddCredentialInput) error
 	ListCredentials() ([]Credential, error)
 	GetCredential(id string) (*Credential, string, error)
+	DeleteCredential(id string) error
+	DeleteBulkCredentials(ids []string) error
+	DeleteAllCredentials() error
 	Close() error
 }
 
@@ -195,6 +198,58 @@ func (s *VaultPebbleStorage) GetCredential(id string) (*Credential, string, erro
 		return nil, "", err
 	}
 	return &cred, string(secretBytes), nil
+}
+
+func (s *VaultPebbleStorage) DeleteCredential(id string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	batch := s.db.NewBatch()
+	defer batch.Close()
+
+	if err := batch.Delete([]byte("Meta:"+id), pebble.NoSync); err != nil {
+		return err
+	}
+	if err := batch.Delete([]byte("Secret:"+id), pebble.NoSync); err != nil {
+		return err
+	}
+	return batch.Commit(pebble.Sync)
+}
+
+func (s *VaultPebbleStorage) DeleteBulkCredentials(ids []string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	batch := s.db.NewBatch()
+	defer batch.Close()
+
+	for _, id := range ids {
+		if err := batch.Delete([]byte("Meta:"+id), pebble.NoSync); err != nil {
+			return err
+		}
+		if err := batch.Delete([]byte("Secret:"+id), pebble.NoSync); err != nil {
+			return err
+		}
+	}
+	return batch.Commit(pebble.Sync)
+}
+
+func (s *VaultPebbleStorage) DeleteAllCredentials() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	batch := s.db.NewBatch()
+	defer batch.Close()
+
+	if err := batch.DeleteRange([]byte("Meta:"), []byte("Meta;"), pebble.NoSync); err != nil {
+		return err
+	}
+
+	if err := batch.DeleteRange([]byte("Secret:"), []byte("Secret;"), pebble.NoSync); err != nil {
+		return err
+	}
+
+	return batch.Commit(pebble.Sync)
 }
 
 func (s *VaultPebbleStorage) Close() error {

@@ -20,6 +20,7 @@ func NewServer(config *ServerConfig) *mcp.Server {
 	mtools.RegisterPasswordTools(server)
 	mtools.RegisterAddCredentialTools(server, config.Pebble)
 	mtools.RegisterCredentialRetrievalTools(server, config.Pebble)
+	mtools.RegisterDeleteCredentialTools(server, config.Pebble)
 	return server
 }
 
