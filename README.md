@@ -48,9 +48,7 @@ go build -o vaultmind ./cmd/vaultmind
 
 ## Demo
 
-<p align="center">
-  <img src="assets/gif/vaultmin-mcp.gif" width="800"/>
-</p>
+![VaultMind Multi-Agent Workflow](assets/gif/vaultmin-mcp.gif)
 
 ### 1. Set your strong master passphrase
 
